@@ -44,18 +44,21 @@ const (
 )
 
 type model struct {
-	clients    []clientRow
-	profiles   []string // sorted profile names
-	cursor     int      // selected client row
-	mode       mode
-	menuCursor int // selected item in profile menu
-	menuItems  []string
-	editBuf    string // text input buffer for name editing
-	status     string
-	quitting   bool
-	runner     *tc.Runner
-	cfg        *config.Config
-	cfgPath    string
+	clients      []clientRow
+	profiles     []string // sorted profile names
+	cursor       int      // selected client row
+	scrollOffset int      // first visible client row index
+	height       int      // terminal height
+	width        int      // terminal width
+	mode         mode
+	menuCursor   int // selected item in profile menu
+	menuItems    []string
+	editBuf      string // text input buffer for name editing
+	status       string
+	quitting     bool
+	runner       *tc.Runner
+	cfg          *config.Config
+	cfgPath      string
 }
 
 func newModel(c *config.Config, path string) model {
@@ -158,6 +161,43 @@ func (m *model) refreshClients() {
 	if m.cursor >= len(m.clients) && len(m.clients) > 0 {
 		m.cursor = len(m.clients) - 1
 	}
+	m.clampScroll()
+}
+
+// visibleRows returns how many client rows fit on screen.
+// Chrome lines: title, blank, header, blank, status?, edit?, blank, help, +2 for scroll indicators.
+func (m model) visibleRows() int {
+	if m.height <= 0 {
+		return len(m.clients) // no size info yet, show all
+	}
+	chrome := 7 // title + blank + header + blank + blank + help + trailing newline
+	if m.mode == modeEdit {
+		chrome++
+	}
+	if m.status != "" {
+		chrome++
+	}
+	// Reserve space for possible scroll indicators
+	chrome += 2
+	rows := m.height - chrome
+	if rows < 1 {
+		rows = 1
+	}
+	return rows
+}
+
+// clampScroll ensures the cursor is visible within the scroll window.
+func (m *model) clampScroll() {
+	visible := m.visibleRows()
+	if m.scrollOffset > m.cursor {
+		m.scrollOffset = m.cursor
+	}
+	if m.cursor >= m.scrollOffset+visible {
+		m.scrollOffset = m.cursor - visible + 1
+	}
+	if m.scrollOffset < 0 {
+		m.scrollOffset = 0
+	}
 }
 
 func reverseDNS(ip string) string {
@@ -187,6 +227,11 @@ func (m model) Init() tea.Cmd { return tickCmd() }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.height = msg.Height
+		m.width = msg.Width
+		m.clampScroll()
+		return m, nil
 	case tea.KeyMsg:
 		switch m.mode {
 		case modeMenu:
@@ -214,12 +259,14 @@ func (m model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "up", "k":
 		if m.cursor > 0 {
 			m.cursor--
+			m.clampScroll()
 		}
 		m.status = ""
 
 	case "down", "j":
 		if m.cursor < len(m.clients)-1 {
 			m.cursor++
+			m.clampScroll()
 		}
 		m.status = ""
 
@@ -437,7 +484,18 @@ func (m model) View() string {
 		lines = append(lines, "  No clients found on LAN.")
 	}
 
-	for i, c := range m.clients {
+	visible := m.visibleRows()
+	end := m.scrollOffset + visible
+	if end > len(m.clients) {
+		end = len(m.clients)
+	}
+
+	if m.scrollOffset > 0 {
+		lines = append(lines, styleHelp.Render(fmt.Sprintf("  ▲ %d more above", m.scrollOffset)))
+	}
+
+	for i := m.scrollOffset; i < end; i++ {
+		c := m.clients[i]
 		profStr := profileLabel(c.Profile)
 		var profStyled string
 		if c.Profile != "" {
@@ -455,6 +513,10 @@ func (m model) View() string {
 		} else {
 			lines = append(lines, row+profStyled)
 		}
+	}
+
+	if end < len(m.clients) {
+		lines = append(lines, styleHelp.Render(fmt.Sprintf("  ▼ %d more below", len(m.clients)-end)))
 	}
 
 	// When the menu is open, add padding so the menu box overlays blank
