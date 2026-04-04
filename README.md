@@ -4,6 +4,8 @@ Network condition simulator for Linux routers. Injects latency, jitter, packet l
 
 Comes with built-in profiles for common network conditions (3G, LTE, Satellite, Starlink, etc.) and an interactive TUI to manage them.
 
+![Screenshot](doc/screenshot.png)
+
 ## How it works
 
 lagsim sets up an HTB qdisc tree on your LAN interface with per-client classes and netem leaf qdiscs. Ingress traffic is redirected through an IFB device so both upload and download are conditioned symmetrically.
