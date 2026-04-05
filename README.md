@@ -98,6 +98,7 @@ Each parameter is applied per-direction (egress + ingress), so effective RTT is 
 | Cable | 5ms | 1ms | 0.05% | – | ▼ 200 Mbit ▲ 20 Mbit |
 | Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | ▼ 3% ▲ 5% | 1% | ▼ 2 Mbit ▲ 1 Mbit |
 | Congested | 50ms | 40ms | 5% | 2% | ▼ 1 Mbit ▲ 0.5 Mbit |
+| Bursty | 10ms | 2ms | gemodel (burst) | – | 50 Mbit |
 
 Built-in profiles are defined in code, not written to the config file.
 
@@ -157,13 +158,30 @@ Only profiles that differ from the built-in defaults are saved to the config fil
 | `delay` | Base latency added to each packet | `100ms` |
 | `jitter` | Random variation added to delay | `30ms` |
 | `correlation` | How much each packet's delay correlates with the previous | `25%` |
-| `loss` | Packet loss probability | `1.5%` |
+| `loss` | Packet loss — random or bursty (see below) | `1.5%` |
 | `duplicate` | Packet duplication probability | `0.5%` |
 | `reorder` | Packet reordering probability | `1%` |
 | `corrupt` | Packet corruption probability | `0.1%` |
 | `rate` | Bandwidth limit | `2mbit` |
 
 All parameters are optional except `delay`. Values use `tc`/`netem` syntax.
+
+### Bursty loss
+
+The `loss` field supports netem's Gilbert-Elliott model for realistic bursty loss patterns — periods of clean transmission interrupted by short bursts of heavy packet loss:
+
+```yaml
+loss: "gemodel p r 1-h 1-k"
+```
+
+| Parameter | Meaning |
+|-----------|---------|
+| `p` | Probability of entering the bad (lossy) state |
+| `r` | Probability of returning to the good state |
+| `1-h` | Loss rate in the bad state (e.g., `100%` = total blackout) |
+| `1-k` | Loss rate in the good state (e.g., `0%` = no baseline loss) |
+
+Example: `loss: "gemodel 0.5% 15% 100% 0%"` — clean most of the time, with occasional short bursts (~7 packets) of 100% loss. This models WiFi interference, cellular handoffs, or buffer overflows.
 
 ### Asymmetric profiles
 

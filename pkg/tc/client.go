@@ -151,7 +151,9 @@ func buildNetemArgs(p config.DirectionalProfile) []string {
 	}
 
 	if p.Loss != "" {
-		args = append(args, "loss", p.Loss)
+		// Support multi-word loss models like "gemodel 0.5% 15% 100% 0%"
+		args = append(args, "loss")
+		args = append(args, strings.Fields(p.Loss)...)
 	}
 
 	if p.Duplicate != "" {

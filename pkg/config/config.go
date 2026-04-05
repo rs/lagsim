@@ -209,6 +209,14 @@ func DefaultConfig() *Config {
 				},
 				Upload: &DirectionalProfile{Rate: "0.5mbit"},
 			},
+			"Bursty": {
+				DirectionalProfile: DirectionalProfile{
+					Delay: "10ms",
+					Jitter: "2ms",
+					Loss:  "gemodel 0.5% 15% 100% 0%",
+					Rate:  "50mbit",
+				},
+			},
 		},
 		Assignments: make(map[string]string),
 		Names:       make(map[string]string),
