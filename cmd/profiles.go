@@ -39,7 +39,7 @@ var profilesCmd = &cobra.Command{
 	},
 }
 
-// asym formats a cell as "value" if symmetric, or "▼ dl ▲ ul" if different.
+// asym formats a cell as "value" if symmetric, or "▲ ul ▼ dl" if different.
 func asym(dl, ul string) string {
 	if dl == "" && ul == "" {
 		return "-"
@@ -50,7 +50,7 @@ func asym(dl, ul string) string {
 		}
 		return dl
 	}
-	return fmt.Sprintf("▼ %s ▲ %s", dash(dl), dash(ul))
+	return fmt.Sprintf("▲ %s ▼ %s", dash(ul), dash(dl))
 }
 
 func dash(s string) string {

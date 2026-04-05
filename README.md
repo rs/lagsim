@@ -83,24 +83,24 @@ On first run, lagsim auto-detects the LAN interface and subnet. If multiple inte
 
 ## Built-in profiles
 
-Each parameter is applied per-direction (egress + ingress), so effective RTT is roughly 2x the delay value. Asymmetric values are shown as `▼ download ▲ upload`.
+Each parameter is applied per-direction (egress + ingress), so effective RTT is roughly 2x the delay value. Asymmetric values show ▲ upload and ▼ download on separate lines.
 
 | Profile | Delay | Jitter | Dist | Loss | Reorder | Slot | Rate |
 |---------|-------|--------|------|------|---------|------|------|
-| 3G | 100ms | ▼ 30ms ▲ 50ms | paretonormal | ▼ 1.5% ▲ 2.5% | – | 40ms 10ms | ▼ 2 Mbit ▲ 0.5 Mbit |
-| LTE | 20ms | ▼ 5ms ▲ 8ms | paretonormal | ▼ 0.5% ▲ 1% | – | 10ms 3ms | ▼ 50 Mbit ▲ 15 Mbit |
-| 5G | 5ms | 1ms | paretonormal | ▼ 0.05% ▲ 0.1% | – | – | ▼ 300 Mbit ▲ 100 Mbit |
-| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | paretonormal | ▼ 5% ▲ 8% | – | 80ms 20ms | ▼ 0.1 Mbit ▲ 0.05 Mbit |
+| 3G | 100ms | ▲ 50ms<br>▼ 30ms | paretonormal | ▲ 2.5%<br>▼ 1.5% | – | 40ms 10ms | ▲ 0.5 Mbit<br>▼ 2 Mbit |
+| LTE | 20ms | ▲ 8ms<br>▼ 5ms | paretonormal | ▲ 1%<br>▼ 0.5% | – | 10ms 3ms | ▲ 15 Mbit<br>▼ 50 Mbit |
+| 5G | 5ms | 1ms | paretonormal | ▲ 0.1%<br>▼ 0.05% | – | – | ▲ 100 Mbit<br>▼ 300 Mbit |
+| Edge-2G | 150ms | ▲ 100ms<br>▼ 60ms | paretonormal | ▲ 8%<br>▼ 5% | – | 80ms 20ms | ▲ 0.05 Mbit<br>▼ 0.1 Mbit |
 | Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% gap 5 | 5ms 2ms | 20 Mbit |
-| Starlink | 20ms | ▼ 5ms ▲ 10ms | normal | ▼ 0.5% ▲ 1% | 0.5% | – | ▼ 100 Mbit ▲ 20 Mbit |
-| Satellite | 300ms | ▼ 30ms ▲ 50ms | normal | ▼ 1.5% ▲ 2.5% | – | – | ▼ 5 Mbit ▲ 1 Mbit |
-| DSL | 15ms | 3ms | normal | 0.2% | – | – | ▼ 25 Mbit ▲ 3 Mbit |
-| Cable | 5ms | 1ms | normal | 0.05% | – | – | ▼ 200 Mbit ▲ 20 Mbit |
-| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | pareto | ▼ 3% ▲ 5% | 1% gap 5 | 30ms 10ms | ▼ 2 Mbit ▲ 1 Mbit |
-| Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▼ 1 Mbit ▲ 0.5 Mbit |
+| Starlink | 20ms | ▲ 10ms<br>▼ 5ms | normal | ▲ 1%<br>▼ 0.5% | 0.5% | – | ▲ 20 Mbit<br>▼ 100 Mbit |
+| Satellite | 300ms | ▲ 50ms<br>▼ 30ms | normal | ▲ 2.5%<br>▼ 1.5% | – | – | ▲ 1 Mbit<br>▼ 5 Mbit |
+| DSL | 15ms | 3ms | normal | 0.2% | – | – | ▲ 3 Mbit<br>▼ 25 Mbit |
+| Cable | 5ms | 1ms | normal | 0.05% | – | – | ▲ 20 Mbit<br>▼ 200 Mbit |
+| Airplane-WiFi | 150ms | ▲ 50ms<br>▼ 30ms | pareto | ▲ 5%<br>▼ 3% | 1% gap 5 | 30ms 10ms | ▲ 1 Mbit<br>▼ 2 Mbit |
+| Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▲ 0.5 Mbit<br>▼ 1 Mbit |
 | Bursty | 10ms | 2ms | – | gemodel (burst) | – | – | 50 Mbit |
 | ECN-Datacenter | 1ms | 0.5ms | normal | 2% ecn | – | – | 1 Gbit |
-| ECN-WAN | 25ms | 5ms | normal | 0.5% ecn | – | – | ▼ 100 Mbit ▲ 50 Mbit |
+| ECN-WAN | 25ms | 5ms | normal | 0.5% ecn | – | – | ▲ 50 Mbit<br>▼ 100 Mbit |
 
 Built-in profiles are defined in code, not written to the config file.
 
