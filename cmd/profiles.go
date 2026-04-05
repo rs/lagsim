@@ -5,6 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"lagsim/pkg/config"
+
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +27,7 @@ var profilesCmd = &cobra.Command{
 				asym(dl.Delay, ul.Delay),
 				asym(dl.Jitter, ul.Jitter),
 				asym(dl.Distribution, ul.Distribution),
-				asym(dl.Loss, ul.Loss),
+				asym(lossDisplay(dl), lossDisplay(ul)),
 				asym(dl.Duplicate, ul.Duplicate),
 				asym(dl.Reorder, ul.Reorder),
 				asym(dl.Slot, ul.Slot),
@@ -56,4 +58,14 @@ func dash(s string) string {
 		return "-"
 	}
 	return s
+}
+
+func lossDisplay(p config.DirectionalProfile) string {
+	if p.Loss == "" {
+		return ""
+	}
+	if p.ECN {
+		return p.Loss + " ecn"
+	}
+	return p.Loss
 }

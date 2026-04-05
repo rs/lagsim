@@ -23,6 +23,7 @@ type DirectionalProfile struct {
 	Correlation  string `yaml:"correlation,omitempty"`
 	Distribution string `yaml:"distribution,omitempty"` // normal, pareto, paretonormal
 	Loss         string `yaml:"loss,omitempty"`
+	ECN          bool   `yaml:"ecn,omitempty"` // mark with ECN CE bit instead of dropping
 	Duplicate    string `yaml:"duplicate,omitempty"`
 	Reorder      string `yaml:"reorder,omitempty"` // e.g. "25% gap 5" or just "1%"
 	Corrupt      string `yaml:"corrupt,omitempty"`
@@ -65,6 +66,9 @@ func (p Profile) Resolved(direction string) DirectionalProfile {
 	}
 	if override.Loss != "" {
 		base.Loss = override.Loss
+	}
+	if override.ECN {
+		base.ECN = true
 	}
 	if override.Duplicate != "" {
 		base.Duplicate = override.Duplicate
@@ -240,6 +244,28 @@ func DefaultConfig() *Config {
 					Loss:   "gemodel 0.5% 15% 100% 0%",
 					Rate:   "50mbit",
 				},
+			},
+			"ECN-Datacenter": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:        "1ms",
+					Jitter:       "0.5ms",
+					Distribution: "normal",
+					Loss:         "2%",
+					ECN:          true,
+					Rate:         "1gbit",
+				},
+			},
+			"ECN-WAN": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:        "25ms",
+					Jitter:       "5ms",
+					Correlation:  "25%",
+					Distribution: "normal",
+					Loss:         "0.5%",
+					ECN:          true,
+					Rate:         "100mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "50mbit"},
 			},
 		},
 		Assignments: make(map[string]string),

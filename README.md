@@ -99,6 +99,8 @@ Each parameter is applied per-direction (egress + ingress), so effective RTT is 
 | Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | pareto | ▼ 3% ▲ 5% | 1% gap 5 | 30ms 10ms | ▼ 2 Mbit ▲ 1 Mbit |
 | Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▼ 1 Mbit ▲ 0.5 Mbit |
 | Bursty | 10ms | 2ms | – | gemodel (burst) | – | – | 50 Mbit |
+| ECN-Datacenter | 1ms | 0.5ms | normal | 2% ecn | – | – | 1 Gbit |
+| ECN-WAN | 25ms | 5ms | normal | 0.5% ecn | – | – | ▼ 100 Mbit ▲ 50 Mbit |
 
 Built-in profiles are defined in code, not written to the config file.
 
@@ -160,6 +162,7 @@ Only profiles that differ from the built-in defaults are saved to the config fil
 | `correlation` | How much each packet's delay correlates with the previous | `25%` |
 | `distribution` | Jitter distribution: `normal`, `pareto`, or `paretonormal` | `paretonormal` |
 | `loss` | Packet loss — random or bursty (see below) | `1.5%` |
+| `ecn` | Mark packets with ECN CE bit instead of dropping (see below) | `true` |
 | `duplicate` | Packet duplication probability | `0.5%` |
 | `reorder` | Packet reordering — random or with gap (see below) | `1%` or `1% gap 5` |
 | `corrupt` | Packet corruption probability | `0.1%` |
@@ -192,6 +195,19 @@ loss: "gemodel p r 1-h 1-k"
 | `1-k` | Loss rate in the good state (e.g., `0%` = no baseline loss) |
 
 Example: `loss: "gemodel 0.5% 15% 100% 0%"` — clean most of the time, with occasional short bursts (~7 packets) of 100% loss. This models WiFi interference, cellular handoffs, or buffer overflows.
+
+### ECN marking
+
+When `ecn: true` is set alongside `loss`, packets are marked with the ECN CE (Congestion Experienced) bit instead of being dropped. The packet still arrives, but ECN-aware TCP stacks treat it as a congestion signal and slow down. Useful for testing DCTCP, BBR, or QUIC ECN behavior:
+
+```yaml
+profiles:
+  My-ECN-Test:
+    delay: 5ms
+    loss: 1%
+    ecn: true
+    rate: 1gbit
+```
 
 ### Reorder with gap
 
