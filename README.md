@@ -259,6 +259,51 @@ Assignments persist across reboots. Run `lagsim init` at startup to restore them
 @reboot /usr/local/bin/lagsim init
 ```
 
+## Example deployment: lab VLAN router
+
+A practical way to use lagsim is to set up a dedicated Linux box as a router between a lab VLAN and the rest of your network. All devices on the lab VLAN — phones, tablets, TVs, IoT devices — get their traffic conditioned without any client-side configuration. Traffic between lab devices and anything on the other side (dev workstations, servers, the internet) goes through lagsim.
+
+```
+   ┌──────────┐  ┌──────────┐  ┌──────────┐
+   │   dev    │  │   dev    │  │ internet │
+   │workstat. │  │  server  │  │  gateway │
+   └────┬─────┘  └────┬─────┘  └────┬─────┘
+        │             │             │
+   ─────┴─────────────┴─────────────┴──── office LAN
+                       │
+                       │ eth0 (or eth0.100 VLAN tag)
+                ┌──────┴──────┐
+                │   lagsim    │
+                │  linux box  │
+                └──────┬──────┘
+                       │ eth1 (or eth0.200 VLAN tag)
+                       │
+          ┌────────────┼───────────┐
+          │            │           │
+     ┌────┴────┐ ┌─────┴─────┐ ┌───┴───┐
+     │  phone  │ │  tablet   │ │  TV   │
+     └─────────┘ └───────────┘ └───────┘
+              Lab WiFi (dedicated SSID)
+```
+
+The Linux box can use two physical interfaces (e.g., `eth0` for the office LAN, `eth1` for the lab) or a single interface with VLAN tagging (e.g., `eth0.100` and `eth0.200`).
+
+### Setup
+
+1. **Create a lab VLAN** on your switch and assign a dedicated WiFi SSID to it
+2. **Configure the Linux box** with either two interfaces or VLAN sub-interfaces — one on the lab VLAN, one on the office LAN
+3. **Enable IP forwarding** so the box routes traffic between the two networks
+4. **Run lagsim** on the lab-facing interface:
+
+```bash
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo lagsim
+```
+
+lagsim auto-detects the lab interface and discovers devices via ARP. You can then assign different profiles to different devices — for example, put a phone on "3G" and a TV on "Satellite" simultaneously.
+
+This lets you test how your client/server application behaves under realistic network conditions: the clients are real devices on the lab VLAN, and the servers run on your workstation or dev servers on the office LAN — all traffic between them passes through lagsim.
+
 ## Requirements
 
 - Linux with `tc`, `ip`, and the `ifb` kernel module
