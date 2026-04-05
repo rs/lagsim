@@ -87,20 +87,20 @@ Each parameter is applied per-direction (egress + ingress), so effective RTT is 
 
 | Profile | Delay | Jitter | Dist | Loss | Reorder | Slot | Rate |
 |---------|-------|--------|------|------|---------|------|------|
-| 3G | 100ms | ▲ 50ms<br>▼ 30ms | paretonormal | ▲ 2.5%<br>▼ 1.5% | – | 40ms 10ms | ▲ 0.5 Mbit<br>▼ 2 Mbit |
-| LTE | 20ms | ▲ 8ms<br>▼ 5ms | paretonormal | ▲ 1%<br>▼ 0.5% | – | 10ms 3ms | ▲ 15 Mbit<br>▼ 50 Mbit |
-| 5G | 5ms | 1ms | paretonormal | ▲ 0.1%<br>▼ 0.05% | – | – | ▲ 100 Mbit<br>▼ 300 Mbit |
-| Edge-2G | 150ms | ▲ 100ms<br>▼ 60ms | paretonormal | ▲ 8%<br>▼ 5% | – | 80ms 20ms | ▲ 0.05 Mbit<br>▼ 0.1 Mbit |
-| Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% gap 5 | 5ms 2ms | 20 Mbit |
-| Starlink | 20ms | ▲ 10ms<br>▼ 5ms | normal | ▲ 1%<br>▼ 0.5% | 0.5% | – | ▲ 20 Mbit<br>▼ 100 Mbit |
-| Satellite | 300ms | ▲ 50ms<br>▼ 30ms | normal | ▲ 2.5%<br>▼ 1.5% | – | – | ▲ 1 Mbit<br>▼ 5 Mbit |
-| DSL | 15ms | 3ms | normal | 0.2% | – | – | ▲ 3 Mbit<br>▼ 25 Mbit |
-| Cable | 5ms | 1ms | normal | 0.05% | – | – | ▲ 20 Mbit<br>▼ 200 Mbit |
-| Airplane-WiFi | 150ms | ▲ 50ms<br>▼ 30ms | pareto | ▲ 5%<br>▼ 3% | 1% gap 5 | 30ms 10ms | ▲ 1 Mbit<br>▼ 2 Mbit |
-| Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▲ 0.5 Mbit<br>▼ 1 Mbit |
-| Bursty | 10ms | 2ms | – | gemodel (burst) | – | – | 50 Mbit |
-| ECN-Datacenter | 1ms | 0.5ms | normal | 2% ecn | – | – | 1 Gbit |
-| ECN-WAN | 25ms | 5ms | normal | 0.5% ecn | – | – | ▲ 50 Mbit<br>▼ 100 Mbit |
+| 3G | 100ms | ▲&nbsp;50ms<br>▼&nbsp;30ms | paretonormal | ▲&nbsp;2.5%<br>▼&nbsp;1.5% | – | 40ms 10ms | ▲&nbsp;0.5&nbsp;Mbps<br>▼&nbsp;2&nbsp;Mbps |
+| LTE | 20ms | ▲&nbsp;8ms<br>▼&nbsp;5ms | paretonormal | ▲&nbsp;1%<br>▼&nbsp;0.5% | – | 10ms 3ms | ▲&nbsp;15&nbsp;Mbps<br>▼&nbsp;50&nbsp;Mbps |
+| 5G | 5ms | 1ms | paretonormal | ▲&nbsp;0.1%<br>▼&nbsp;0.05% | – | – | ▲&nbsp;100&nbsp;Mbps<br>▼&nbsp;300&nbsp;Mbps |
+| Edge-2G | 150ms | ▲&nbsp;100ms<br>▼&nbsp;60ms | paretonormal | ▲&nbsp;8%<br>▼&nbsp;5% | – | 80ms 20ms | ▲&nbsp;0.05&nbsp;Mbps<br>▼&nbsp;0.1&nbsp;Mbps |
+| Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% gap 5 | 5ms 2ms | 20&nbsp;Mbps |
+| Starlink | 20ms | ▲&nbsp;10ms<br>▼&nbsp;5ms | normal | ▲&nbsp;1%<br>▼&nbsp;0.5% | 0.5% | – | ▲&nbsp;20&nbsp;Mbps<br>▼&nbsp;100&nbsp;Mbps |
+| Satellite | 300ms | ▲&nbsp;50ms<br>▼&nbsp;30ms | normal | ▲&nbsp;2.5%<br>▼&nbsp;1.5% | – | – | ▲&nbsp;1&nbsp;Mbps<br>▼&nbsp;5&nbsp;Mbps |
+| DSL | 15ms | 3ms | normal | 0.2% | – | – | ▲&nbsp;3&nbsp;Mbps<br>▼&nbsp;25&nbsp;Mbps |
+| Cable | 5ms | 1ms | normal | 0.05% | – | – | ▲&nbsp;20&nbsp;Mbps<br>▼&nbsp;200&nbsp;Mbps |
+| Airplane-WiFi | 150ms | ▲&nbsp;50ms<br>▼&nbsp;30ms | pareto | ▲&nbsp;5%<br>▼&nbsp;3% | 1% gap 5 | 30ms 10ms | ▲&nbsp;1&nbsp;Mbps<br>▼&nbsp;2&nbsp;Mbps |
+| Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▲&nbsp;0.5&nbsp;Mbps<br>▼&nbsp;1&nbsp;Mbps |
+| Bursty | 10ms | 2ms | – | gemodel (burst) | – | – | 50&nbsp;Mbps |
+| ECN-Datacenter | 1ms | 0.5ms | normal | 2% ecn | – | – | 1&nbsp;Gbps |
+| ECN-WAN | 25ms | 5ms | normal | 0.5% ecn | – | – | ▲&nbsp;50&nbsp;Mbps<br>▼&nbsp;100&nbsp;Mbps |
 
 Built-in profiles are defined in code, not written to the config file.
 
