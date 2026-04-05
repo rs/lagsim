@@ -85,20 +85,20 @@ On first run, lagsim auto-detects the LAN interface and subnet. If multiple inte
 
 Each parameter is applied per-direction (egress + ingress), so effective RTT is roughly 2x the delay value. Asymmetric values are shown as `▼ download ▲ upload`.
 
-| Profile | Delay | Jitter | Dist | Loss | Reorder | Rate |
-|---------|-------|--------|------|------|---------|------|
-| 3G | 100ms | ▼ 30ms ▲ 50ms | paretonormal | ▼ 1.5% ▲ 2.5% | – | ▼ 2 Mbit ▲ 0.5 Mbit |
-| LTE | 20ms | ▼ 5ms ▲ 8ms | paretonormal | ▼ 0.5% ▲ 1% | – | ▼ 50 Mbit ▲ 15 Mbit |
-| 5G | 5ms | 1ms | paretonormal | ▼ 0.05% ▲ 0.1% | – | ▼ 300 Mbit ▲ 100 Mbit |
-| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | paretonormal | ▼ 5% ▲ 8% | – | ▼ 0.1 Mbit ▲ 0.05 Mbit |
-| Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% | 20 Mbit |
-| Starlink | 20ms | ▼ 5ms ▲ 10ms | normal | ▼ 0.5% ▲ 1% | 0.5% | ▼ 100 Mbit ▲ 20 Mbit |
-| Satellite | 300ms | ▼ 30ms ▲ 50ms | normal | ▼ 1.5% ▲ 2.5% | – | ▼ 5 Mbit ▲ 1 Mbit |
-| DSL | 15ms | 3ms | normal | 0.2% | – | ▼ 25 Mbit ▲ 3 Mbit |
-| Cable | 5ms | 1ms | normal | 0.05% | – | ▼ 200 Mbit ▲ 20 Mbit |
-| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | pareto | ▼ 3% ▲ 5% | 1% | ▼ 2 Mbit ▲ 1 Mbit |
-| Congested | 50ms | 40ms | paretonormal | 5% | 2% | ▼ 1 Mbit ▲ 0.5 Mbit |
-| Bursty | 10ms | 2ms | – | gemodel (burst) | – | 50 Mbit |
+| Profile | Delay | Jitter | Dist | Loss | Reorder | Slot | Rate |
+|---------|-------|--------|------|------|---------|------|------|
+| 3G | 100ms | ▼ 30ms ▲ 50ms | paretonormal | ▼ 1.5% ▲ 2.5% | – | 40ms 10ms | ▼ 2 Mbit ▲ 0.5 Mbit |
+| LTE | 20ms | ▼ 5ms ▲ 8ms | paretonormal | ▼ 0.5% ▲ 1% | – | 10ms 3ms | ▼ 50 Mbit ▲ 15 Mbit |
+| 5G | 5ms | 1ms | paretonormal | ▼ 0.05% ▲ 0.1% | – | – | ▼ 300 Mbit ▲ 100 Mbit |
+| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | paretonormal | ▼ 5% ▲ 8% | – | 80ms 20ms | ▼ 0.1 Mbit ▲ 0.05 Mbit |
+| Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% gap 5 | 5ms 2ms | 20 Mbit |
+| Starlink | 20ms | ▼ 5ms ▲ 10ms | normal | ▼ 0.5% ▲ 1% | 0.5% | – | ▼ 100 Mbit ▲ 20 Mbit |
+| Satellite | 300ms | ▼ 30ms ▲ 50ms | normal | ▼ 1.5% ▲ 2.5% | – | – | ▼ 5 Mbit ▲ 1 Mbit |
+| DSL | 15ms | 3ms | normal | 0.2% | – | – | ▼ 25 Mbit ▲ 3 Mbit |
+| Cable | 5ms | 1ms | normal | 0.05% | – | – | ▼ 200 Mbit ▲ 20 Mbit |
+| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | pareto | ▼ 3% ▲ 5% | 1% gap 5 | 30ms 10ms | ▼ 2 Mbit ▲ 1 Mbit |
+| Congested | 50ms | 40ms | paretonormal | 5% | 2% gap 3 | – | ▼ 1 Mbit ▲ 0.5 Mbit |
+| Bursty | 10ms | 2ms | – | gemodel (burst) | – | – | 50 Mbit |
 
 Built-in profiles are defined in code, not written to the config file.
 
@@ -161,9 +161,10 @@ Only profiles that differ from the built-in defaults are saved to the config fil
 | `distribution` | Jitter distribution: `normal`, `pareto`, or `paretonormal` | `paretonormal` |
 | `loss` | Packet loss — random or bursty (see below) | `1.5%` |
 | `duplicate` | Packet duplication probability | `0.5%` |
-| `reorder` | Packet reordering probability | `1%` |
+| `reorder` | Packet reordering — random or with gap (see below) | `1%` or `1% gap 5` |
 | `corrupt` | Packet corruption probability | `0.1%` |
 | `rate` | Bandwidth limit | `2mbit` |
+| `slot` | Packet batching interval — holds then releases in bursts | `20ms 5ms` |
 
 All parameters are optional except `delay`. Values use `tc`/`netem` syntax.
 
@@ -191,6 +192,24 @@ loss: "gemodel p r 1-h 1-k"
 | `1-k` | Loss rate in the good state (e.g., `0%` = no baseline loss) |
 
 Example: `loss: "gemodel 0.5% 15% 100% 0%"` — clean most of the time, with occasional short bursts (~7 packets) of 100% loss. This models WiFi interference, cellular handoffs, or buffer overflows.
+
+### Reorder with gap
+
+By default, `reorder` randomly reorders packets. Adding `gap N` makes it deterministic: every Nth packet is reordered with the given probability. This is more realistic for triggering TCP fast-retransmit (which fires after 3 duplicate ACKs):
+
+```yaml
+reorder: "1% gap 5"    # every 5th packet has a 1% chance of being reordered
+```
+
+### Slot-based emission
+
+The `slot` parameter batches packets into time slots instead of sending them individually. Packets are held and released in bursts, simulating WiFi TDMA scheduling or cellular resource allocation:
+
+```yaml
+slot: "20ms 5ms"    # release a batch every 20ms ± 5ms jitter
+```
+
+This is especially noticeable for interactive traffic (VoIP, gaming) where micro-bursts affect perceived quality even when average throughput is fine.
 
 ### Asymmetric profiles
 

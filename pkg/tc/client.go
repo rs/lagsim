@@ -164,11 +164,19 @@ func buildNetemArgs(p config.DirectionalProfile) []string {
 	}
 
 	if p.Reorder != "" {
-		args = append(args, "reorder", p.Reorder)
+		// Support multi-word reorder like "25% gap 5"
+		args = append(args, "reorder")
+		args = append(args, strings.Fields(p.Reorder)...)
 	}
 
 	if p.Corrupt != "" {
 		args = append(args, "corrupt", p.Corrupt)
+	}
+
+	if p.Slot != "" {
+		// Support multi-word slot like "20ms 5ms"
+		args = append(args, "slot")
+		args = append(args, strings.Fields(p.Slot)...)
 	}
 
 	return args

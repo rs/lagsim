@@ -24,9 +24,10 @@ type DirectionalProfile struct {
 	Distribution string `yaml:"distribution,omitempty"` // normal, pareto, paretonormal
 	Loss         string `yaml:"loss,omitempty"`
 	Duplicate    string `yaml:"duplicate,omitempty"`
-	Reorder      string `yaml:"reorder,omitempty"`
+	Reorder      string `yaml:"reorder,omitempty"` // e.g. "25% gap 5" or just "1%"
 	Corrupt      string `yaml:"corrupt,omitempty"`
 	Rate         string `yaml:"rate,omitempty"`
+	Slot         string `yaml:"slot,omitempty"` // e.g. "20ms 5ms" (min delay, optional jitter)
 }
 
 // Profile defines network conditions. Base fields apply to both directions.
@@ -77,6 +78,9 @@ func (p Profile) Resolved(direction string) DirectionalProfile {
 	if override.Rate != "" {
 		base.Rate = override.Rate
 	}
+	if override.Slot != "" {
+		base.Slot = override.Slot
+	}
 	return base
 }
 
@@ -110,6 +114,7 @@ func DefaultConfig() *Config {
 					Distribution: "paretonormal",
 					Loss:         "1.5%",
 					Rate:         "2mbit",
+					Slot:         "40ms 10ms",
 				},
 				Upload: &DirectionalProfile{Rate: "0.5mbit", Jitter: "50ms", Loss: "2.5%"},
 			},
@@ -121,6 +126,7 @@ func DefaultConfig() *Config {
 					Distribution: "paretonormal",
 					Loss:         "0.5%",
 					Rate:         "50mbit",
+					Slot:         "10ms 3ms",
 				},
 				Upload: &DirectionalProfile{Rate: "15mbit", Jitter: "8ms", Loss: "1%"},
 			},
@@ -143,6 +149,7 @@ func DefaultConfig() *Config {
 					Distribution: "paretonormal",
 					Loss:         "5%",
 					Rate:         "0.1mbit",
+					Slot:         "80ms 20ms",
 				},
 				Upload: &DirectionalProfile{Rate: "0.05mbit", Jitter: "100ms", Loss: "8%"},
 			},
@@ -153,8 +160,9 @@ func DefaultConfig() *Config {
 					Correlation:  "25%",
 					Distribution: "pareto",
 					Loss:         "3%",
-					Reorder:      "1%",
+					Reorder:      "1% gap 5",
 					Rate:         "20mbit",
+					Slot:         "5ms 2ms",
 				},
 			},
 			"Starlink": {
@@ -207,8 +215,9 @@ func DefaultConfig() *Config {
 					Correlation:  "25%",
 					Distribution: "pareto",
 					Loss:         "3%",
-					Reorder:      "1%",
+					Reorder:      "1% gap 5",
 					Rate:         "2mbit",
+					Slot:         "30ms 10ms",
 				},
 				Upload: &DirectionalProfile{Rate: "1mbit", Loss: "5%", Jitter: "50ms"},
 			},
@@ -219,7 +228,7 @@ func DefaultConfig() *Config {
 					Correlation:  "50%",
 					Distribution: "paretonormal",
 					Loss:         "5%",
-					Reorder:      "2%",
+					Reorder:      "2% gap 3",
 					Rate:         "1mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "0.5mbit"},
