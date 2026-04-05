@@ -85,20 +85,20 @@ On first run, lagsim auto-detects the LAN interface and subnet. If multiple inte
 
 Each parameter is applied per-direction (egress + ingress), so effective RTT is roughly 2x the delay value. Asymmetric values are shown as `▼ download ▲ upload`.
 
-| Profile | Delay | Jitter | Loss | Reorder | Rate |
-|---------|-------|--------|------|---------|------|
-| 3G | 100ms | ▼ 30ms ▲ 50ms | ▼ 1.5% ▲ 2.5% | – | ▼ 2 Mbit ▲ 0.5 Mbit |
-| LTE | 20ms | ▼ 5ms ▲ 8ms | ▼ 0.5% ▲ 1% | – | ▼ 50 Mbit ▲ 15 Mbit |
-| 5G | 5ms | 1ms | ▼ 0.05% ▲ 0.1% | – | ▼ 300 Mbit ▲ 100 Mbit |
-| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | ▼ 5% ▲ 8% | – | ▼ 0.1 Mbit ▲ 0.05 Mbit |
-| Lossy-WiFi | 5ms | 3ms | 3% | 1% | 20 Mbit |
-| Starlink | 20ms | ▼ 5ms ▲ 10ms | ▼ 0.5% ▲ 1% | 0.5% | ▼ 100 Mbit ▲ 20 Mbit |
-| Satellite | 300ms | ▼ 30ms ▲ 50ms | ▼ 1.5% ▲ 2.5% | – | ▼ 5 Mbit ▲ 1 Mbit |
-| DSL | 15ms | 3ms | 0.2% | – | ▼ 25 Mbit ▲ 3 Mbit |
-| Cable | 5ms | 1ms | 0.05% | – | ▼ 200 Mbit ▲ 20 Mbit |
-| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | ▼ 3% ▲ 5% | 1% | ▼ 2 Mbit ▲ 1 Mbit |
-| Congested | 50ms | 40ms | 5% | 2% | ▼ 1 Mbit ▲ 0.5 Mbit |
-| Bursty | 10ms | 2ms | gemodel (burst) | – | 50 Mbit |
+| Profile | Delay | Jitter | Dist | Loss | Reorder | Rate |
+|---------|-------|--------|------|------|---------|------|
+| 3G | 100ms | ▼ 30ms ▲ 50ms | paretonormal | ▼ 1.5% ▲ 2.5% | – | ▼ 2 Mbit ▲ 0.5 Mbit |
+| LTE | 20ms | ▼ 5ms ▲ 8ms | paretonormal | ▼ 0.5% ▲ 1% | – | ▼ 50 Mbit ▲ 15 Mbit |
+| 5G | 5ms | 1ms | paretonormal | ▼ 0.05% ▲ 0.1% | – | ▼ 300 Mbit ▲ 100 Mbit |
+| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | paretonormal | ▼ 5% ▲ 8% | – | ▼ 0.1 Mbit ▲ 0.05 Mbit |
+| Lossy-WiFi | 5ms | 3ms | pareto | 3% | 1% | 20 Mbit |
+| Starlink | 20ms | ▼ 5ms ▲ 10ms | normal | ▼ 0.5% ▲ 1% | 0.5% | ▼ 100 Mbit ▲ 20 Mbit |
+| Satellite | 300ms | ▼ 30ms ▲ 50ms | normal | ▼ 1.5% ▲ 2.5% | – | ▼ 5 Mbit ▲ 1 Mbit |
+| DSL | 15ms | 3ms | normal | 0.2% | – | ▼ 25 Mbit ▲ 3 Mbit |
+| Cable | 5ms | 1ms | normal | 0.05% | – | ▼ 200 Mbit ▲ 20 Mbit |
+| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | pareto | ▼ 3% ▲ 5% | 1% | ▼ 2 Mbit ▲ 1 Mbit |
+| Congested | 50ms | 40ms | paretonormal | 5% | 2% | ▼ 1 Mbit ▲ 0.5 Mbit |
+| Bursty | 10ms | 2ms | – | gemodel (burst) | – | 50 Mbit |
 
 Built-in profiles are defined in code, not written to the config file.
 
@@ -158,6 +158,7 @@ Only profiles that differ from the built-in defaults are saved to the config fil
 | `delay` | Base latency added to each packet | `100ms` |
 | `jitter` | Random variation added to delay | `30ms` |
 | `correlation` | How much each packet's delay correlates with the previous | `25%` |
+| `distribution` | Jitter distribution: `normal`, `pareto`, or `paretonormal` | `paretonormal` |
 | `loss` | Packet loss — random or bursty (see below) | `1.5%` |
 | `duplicate` | Packet duplication probability | `0.5%` |
 | `reorder` | Packet reordering probability | `1%` |
@@ -165,6 +166,14 @@ Only profiles that differ from the built-in defaults are saved to the config fil
 | `rate` | Bandwidth limit | `2mbit` |
 
 All parameters are optional except `delay`. Values use `tc`/`netem` syntax.
+
+### Delay distribution
+
+Without a distribution, jitter is uniformly random. Setting `distribution` shapes how jitter values are picked:
+
+- **`normal`** — bell curve around the base delay. Good for stable links (DSL, cable, satellite) where variation is symmetric.
+- **`pareto`** — heavy-tailed: most packets are near the base delay, but occasional packets get much larger spikes. Good for WiFi and other interference-prone links.
+- **`paretonormal`** — blend of both: normal most of the time with pareto-like tail spikes. Good for cellular networks where handoffs and contention cause intermittent latency bursts.
 
 ### Bursty loss
 

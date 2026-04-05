@@ -148,6 +148,9 @@ func buildNetemArgs(p config.DirectionalProfile) []string {
 				args = append(args, p.Correlation)
 			}
 		}
+		if p.Distribution != "" {
+			args = append(args, "distribution", p.Distribution)
+		}
 	}
 
 	if p.Loss != "" {

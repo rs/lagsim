@@ -18,14 +18,15 @@ type InterfaceConfig struct {
 
 // DirectionalProfile holds netem parameters for a single direction.
 type DirectionalProfile struct {
-	Delay       string `yaml:"delay,omitempty"`
-	Jitter      string `yaml:"jitter,omitempty"`
-	Correlation string `yaml:"correlation,omitempty"`
-	Loss        string `yaml:"loss,omitempty"`
-	Duplicate   string `yaml:"duplicate,omitempty"`
-	Reorder     string `yaml:"reorder,omitempty"`
-	Corrupt     string `yaml:"corrupt,omitempty"`
-	Rate        string `yaml:"rate,omitempty"`
+	Delay        string `yaml:"delay,omitempty"`
+	Jitter       string `yaml:"jitter,omitempty"`
+	Correlation  string `yaml:"correlation,omitempty"`
+	Distribution string `yaml:"distribution,omitempty"` // normal, pareto, paretonormal
+	Loss         string `yaml:"loss,omitempty"`
+	Duplicate    string `yaml:"duplicate,omitempty"`
+	Reorder      string `yaml:"reorder,omitempty"`
+	Corrupt      string `yaml:"corrupt,omitempty"`
+	Rate         string `yaml:"rate,omitempty"`
 }
 
 // Profile defines network conditions. Base fields apply to both directions.
@@ -57,6 +58,9 @@ func (p Profile) Resolved(direction string) DirectionalProfile {
 	}
 	if override.Correlation != "" {
 		base.Correlation = override.Correlation
+	}
+	if override.Distribution != "" {
+		base.Distribution = override.Distribution
 	}
 	if override.Loss != "" {
 		base.Loss = override.Loss
@@ -100,121 +104,132 @@ func DefaultConfig() *Config {
 		Profiles: map[string]*Profile{
 			"3G": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "100ms",
-					Jitter:      "30ms",
-					Correlation: "25%",
-					Loss:        "1.5%",
-					Rate:        "2mbit",
+					Delay:        "100ms",
+					Jitter:       "30ms",
+					Correlation:  "25%",
+					Distribution: "paretonormal",
+					Loss:         "1.5%",
+					Rate:         "2mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "0.5mbit", Jitter: "50ms", Loss: "2.5%"},
 			},
 			"LTE": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "20ms",
-					Jitter:      "5ms",
-					Correlation: "25%",
-					Loss:        "0.5%",
-					Rate:        "50mbit",
+					Delay:        "20ms",
+					Jitter:       "5ms",
+					Correlation:  "25%",
+					Distribution: "paretonormal",
+					Loss:         "0.5%",
+					Rate:         "50mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "15mbit", Jitter: "8ms", Loss: "1%"},
 			},
 			"5G": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "5ms",
-					Jitter:      "1ms",
-					Correlation: "25%",
-					Loss:        "0.05%",
-					Rate:        "300mbit",
+					Delay:        "5ms",
+					Jitter:       "1ms",
+					Correlation:  "25%",
+					Distribution: "paretonormal",
+					Loss:         "0.05%",
+					Rate:         "300mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "100mbit", Loss: "0.1%"},
 			},
 			"Edge-2G": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "150ms",
-					Jitter:      "60ms",
-					Correlation: "25%",
-					Loss:        "5%",
-					Rate:        "0.1mbit",
+					Delay:        "150ms",
+					Jitter:       "60ms",
+					Correlation:  "25%",
+					Distribution: "paretonormal",
+					Loss:         "5%",
+					Rate:         "0.1mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "0.05mbit", Jitter: "100ms", Loss: "8%"},
 			},
 			"Lossy-WiFi": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "5ms",
-					Jitter:      "3ms",
-					Correlation: "25%",
-					Loss:        "3%",
-					Reorder:     "1%",
-					Rate:        "20mbit",
+					Delay:        "5ms",
+					Jitter:       "3ms",
+					Correlation:  "25%",
+					Distribution: "pareto",
+					Loss:         "3%",
+					Reorder:      "1%",
+					Rate:         "20mbit",
 				},
 			},
 			"Starlink": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "20ms",
-					Jitter:      "5ms",
-					Correlation: "25%",
-					Loss:        "0.5%",
-					Reorder:     "0.5%",
-					Rate:        "100mbit",
+					Delay:        "20ms",
+					Jitter:       "5ms",
+					Correlation:  "25%",
+					Distribution: "normal",
+					Loss:         "0.5%",
+					Reorder:      "0.5%",
+					Rate:         "100mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "20mbit", Jitter: "10ms", Loss: "1%"},
 			},
 			"Satellite": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "300ms",
-					Jitter:      "30ms",
-					Correlation: "25%",
-					Loss:        "1.5%",
-					Rate:        "5mbit",
+					Delay:        "300ms",
+					Jitter:       "30ms",
+					Correlation:  "25%",
+					Distribution: "normal",
+					Loss:         "1.5%",
+					Rate:         "5mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "1mbit", Jitter: "50ms", Loss: "2.5%"},
 			},
 			"DSL": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:  "15ms",
-					Jitter: "3ms",
-					Loss:   "0.2%",
-					Rate:   "25mbit",
+					Delay:        "15ms",
+					Jitter:       "3ms",
+					Distribution: "normal",
+					Loss:         "0.2%",
+					Rate:         "25mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "3mbit"},
 			},
 			"Cable": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:  "5ms",
-					Jitter: "1ms",
-					Loss:   "0.05%",
-					Rate:   "200mbit",
+					Delay:        "5ms",
+					Jitter:       "1ms",
+					Distribution: "normal",
+					Loss:         "0.05%",
+					Rate:         "200mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "20mbit"},
 			},
 			"Airplane-WiFi": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "150ms",
-					Jitter:      "30ms",
-					Correlation: "25%",
-					Loss:        "3%",
-					Reorder:     "1%",
-					Rate:        "2mbit",
+					Delay:        "150ms",
+					Jitter:       "30ms",
+					Correlation:  "25%",
+					Distribution: "pareto",
+					Loss:         "3%",
+					Reorder:      "1%",
+					Rate:         "2mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "1mbit", Loss: "5%", Jitter: "50ms"},
 			},
 			"Congested": {
 				DirectionalProfile: DirectionalProfile{
-					Delay:       "50ms",
-					Jitter:      "40ms",
-					Correlation: "50%",
-					Loss:        "5%",
-					Reorder:     "2%",
-					Rate:        "1mbit",
+					Delay:        "50ms",
+					Jitter:       "40ms",
+					Correlation:  "50%",
+					Distribution: "paretonormal",
+					Loss:         "5%",
+					Reorder:      "2%",
+					Rate:         "1mbit",
 				},
 				Upload: &DirectionalProfile{Rate: "0.5mbit"},
 			},
 			"Bursty": {
 				DirectionalProfile: DirectionalProfile{
-					Delay: "10ms",
+					Delay:  "10ms",
 					Jitter: "2ms",
-					Loss:  "gemodel 0.5% 15% 100% 0%",
-					Rate:  "50mbit",
+					Loss:   "gemodel 0.5% 15% 100% 0%",
+					Rate:   "50mbit",
 				},
 			},
 		},

@@ -13,17 +13,18 @@ var profilesCmd = &cobra.Command{
 	Short: "List available network profiles",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "PROFILE\tDELAY\tJITTER\tLOSS\tDUP\tREORDER\tRATE")
-		fmt.Fprintln(w, "-------\t-----\t------\t----\t---\t-------\t----")
+		fmt.Fprintln(w, "PROFILE\tDELAY\tJITTER\tDIST\tLOSS\tDUP\tREORDER\tRATE")
+		fmt.Fprintln(w, "-------\t-----\t------\t----\t----\t---\t-------\t----")
 
 		for _, name := range cfg.ProfileNames() {
 			p := cfg.Profiles[name]
 			dl := p.Resolved("download")
 			ul := p.Resolved("upload")
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 				name,
 				asym(dl.Delay, ul.Delay),
 				asym(dl.Jitter, ul.Jitter),
+				asym(dl.Distribution, ul.Distribution),
 				asym(dl.Loss, ul.Loss),
 				asym(dl.Duplicate, ul.Duplicate),
 				asym(dl.Reorder, ul.Reorder),
