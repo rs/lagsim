@@ -16,8 +16,9 @@ type InterfaceConfig struct {
 	Subnet string `yaml:"subnet"`
 }
 
-type Profile struct {
-	Delay       string `yaml:"delay"`
+// DirectionalProfile holds netem parameters for a single direction.
+type DirectionalProfile struct {
+	Delay       string `yaml:"delay,omitempty"`
 	Jitter      string `yaml:"jitter,omitempty"`
 	Correlation string `yaml:"correlation,omitempty"`
 	Loss        string `yaml:"loss,omitempty"`
@@ -27,10 +28,63 @@ type Profile struct {
 	Rate        string `yaml:"rate,omitempty"`
 }
 
+// Profile defines network conditions. Base fields apply to both directions.
+// Optional Download/Upload overrides replace specific params per direction.
+type Profile struct {
+	DirectionalProfile `yaml:",inline"`
+	Download           *DirectionalProfile `yaml:"download,omitempty"`
+	Upload             *DirectionalProfile `yaml:"upload,omitempty"`
+}
+
+// Resolved returns the effective parameters for a direction ("download" or "upload")
+// by overlaying directional overrides on top of the base profile.
+func (p Profile) Resolved(direction string) DirectionalProfile {
+	var override *DirectionalProfile
+	if direction == "download" {
+		override = p.Download
+	} else {
+		override = p.Upload
+	}
+	if override == nil {
+		return p.DirectionalProfile
+	}
+	base := p.DirectionalProfile
+	if override.Delay != "" {
+		base.Delay = override.Delay
+	}
+	if override.Jitter != "" {
+		base.Jitter = override.Jitter
+	}
+	if override.Correlation != "" {
+		base.Correlation = override.Correlation
+	}
+	if override.Loss != "" {
+		base.Loss = override.Loss
+	}
+	if override.Duplicate != "" {
+		base.Duplicate = override.Duplicate
+	}
+	if override.Reorder != "" {
+		base.Reorder = override.Reorder
+	}
+	if override.Corrupt != "" {
+		base.Corrupt = override.Corrupt
+	}
+	if override.Rate != "" {
+		base.Rate = override.Rate
+	}
+	return base
+}
+
+// IsAsymmetric returns true if the profile has directional overrides.
+func (p Profile) IsAsymmetric() bool {
+	return p.Download != nil || p.Upload != nil
+}
+
 type Config struct {
 	Interfaces  InterfaceConfig    `yaml:"interfaces"`
 	RootRate    string             `yaml:"root_rate"`
-	Profiles    map[string]Profile `yaml:"profiles"`
+	Profiles    map[string]*Profile `yaml:"profiles"`
 	Assignments map[string]string  `yaml:"assignments"`
 	Names       map[string]string  `yaml:"names"` // MAC -> custom name
 }
@@ -43,53 +97,117 @@ func DefaultConfig() *Config {
 			Subnet: "",
 		},
 		RootRate: "1gbit",
-		Profiles: map[string]Profile{
+		Profiles: map[string]*Profile{
 			"3G": {
-				Delay:       "200ms",
-				Jitter:      "50ms",
-				Correlation: "25%",
-				Loss:        "1.5%",
-				Rate:        "2mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "100ms",
+					Jitter:      "30ms",
+					Correlation: "25%",
+					Loss:        "1.5%",
+					Rate:        "2mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "0.5mbit", Jitter: "50ms", Loss: "2.5%"},
 			},
 			"LTE": {
-				Delay:       "50ms",
-				Jitter:      "10ms",
-				Correlation: "25%",
-				Loss:        "0.5%",
-				Rate:        "50mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "20ms",
+					Jitter:      "5ms",
+					Correlation: "25%",
+					Loss:        "0.5%",
+					Rate:        "50mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "15mbit", Jitter: "8ms", Loss: "1%"},
+			},
+			"5G": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "5ms",
+					Jitter:      "1ms",
+					Correlation: "25%",
+					Loss:        "0.05%",
+					Rate:        "300mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "100mbit", Loss: "0.1%"},
+			},
+			"Edge-2G": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "150ms",
+					Jitter:      "60ms",
+					Correlation: "25%",
+					Loss:        "5%",
+					Rate:        "0.1mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "0.05mbit", Jitter: "100ms", Loss: "8%"},
 			},
 			"Lossy-WiFi": {
-				Delay:   "15ms",
-				Jitter:  "5ms",
-				Loss:    "3%",
-				Reorder: "1%",
-				Rate:    "20mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "5ms",
+					Jitter:      "3ms",
+					Correlation: "25%",
+					Loss:        "3%",
+					Reorder:     "1%",
+					Rate:        "20mbit",
+				},
 			},
 			"Starlink": {
-				Delay:       "40ms",
-				Jitter:      "7ms",
-				Correlation: "25%",
-				Loss:        "1%",
-				Rate:        "100mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "20ms",
+					Jitter:      "5ms",
+					Correlation: "25%",
+					Loss:        "0.5%",
+					Reorder:     "0.5%",
+					Rate:        "100mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "20mbit", Jitter: "10ms", Loss: "1%"},
 			},
 			"Satellite": {
-				Delay:       "600ms",
-				Jitter:      "50ms",
-				Correlation: "25%",
-				Loss:        "1.5%",
-				Rate:        "5mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "300ms",
+					Jitter:      "30ms",
+					Correlation: "25%",
+					Loss:        "1.5%",
+					Rate:        "5mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "1mbit", Jitter: "50ms", Loss: "2.5%"},
 			},
 			"DSL": {
-				Delay:  "25ms",
-				Jitter: "5ms",
-				Loss:   "0.2%",
-				Rate:   "25mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:  "15ms",
+					Jitter: "3ms",
+					Loss:   "0.2%",
+					Rate:   "25mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "3mbit"},
 			},
 			"Cable": {
-				Delay:  "10ms",
-				Jitter: "2ms",
-				Loss:   "0.05%",
-				Rate:   "200mbit",
+				DirectionalProfile: DirectionalProfile{
+					Delay:  "5ms",
+					Jitter: "1ms",
+					Loss:   "0.05%",
+					Rate:   "200mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "20mbit"},
+			},
+			"Airplane-WiFi": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "150ms",
+					Jitter:      "30ms",
+					Correlation: "25%",
+					Loss:        "3%",
+					Reorder:     "1%",
+					Rate:        "2mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "1mbit", Loss: "5%", Jitter: "50ms"},
+			},
+			"Congested": {
+				DirectionalProfile: DirectionalProfile{
+					Delay:       "50ms",
+					Jitter:      "40ms",
+					Correlation: "50%",
+					Loss:        "5%",
+					Reorder:     "2%",
+					Rate:        "1mbit",
+				},
+				Upload: &DirectionalProfile{Rate: "0.5mbit"},
 			},
 		},
 		Assignments: make(map[string]string),
@@ -109,6 +227,12 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
+	// Remove profiles set to null in YAML (allows disabling built-ins).
+	for name, p := range cfg.Profiles {
+		if p == nil {
+			delete(cfg.Profiles, name)
+		}
+	}
 	if cfg.Assignments == nil {
 		cfg.Assignments = make(map[string]string)
 	}
@@ -119,7 +243,19 @@ func Load(path string) (*Config, error) {
 }
 
 func Save(cfg *Config, path string) error {
+	// Don't persist built-in profiles — only save user overrides/additions.
+	defaults := DefaultConfig()
+	saved := cfg.Profiles
+	filtered := make(map[string]*Profile, len(saved))
+	for name, p := range saved {
+		if dp, ok := defaults.Profiles[name]; ok && profileEqual(p, dp) {
+			continue // skip unchanged built-in
+		}
+		filtered[name] = p
+	}
+	cfg.Profiles = filtered
 	data, err := yaml.Marshal(cfg)
+	cfg.Profiles = saved // restore full set in memory
 	if err != nil {
 		return fmt.Errorf("marshal config: %w", err)
 	}
@@ -130,6 +266,25 @@ func Save(cfg *Config, path string) error {
 		return fmt.Errorf("write config: %w", err)
 	}
 	return nil
+}
+
+func profileEqual(a, b *Profile) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.DirectionalProfile == b.DirectionalProfile &&
+		dirPtrEqual(a.Download, b.Download) &&
+		dirPtrEqual(a.Upload, b.Upload)
+}
+
+func dirPtrEqual(a, b *DirectionalProfile) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
 }
 
 func (c *Config) ValidateIP(ip string) error {

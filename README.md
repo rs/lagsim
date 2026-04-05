@@ -2,20 +2,22 @@
 
 Network condition simulator for Linux routers. Injects latency, jitter, packet loss, reordering, and duplication per client IP using `tc`/`netem`/`ifb`.
 
-Comes with built-in profiles for common network conditions (3G, LTE, Satellite, Starlink, etc.) and an interactive TUI to manage them.
+Comes with built-in profiles for common network conditions (3G, LTE, Satellite, Starlink, etc.) and an interactive TUI to manage them. Profiles support asymmetric upload/download parameters to model real-world links.
 
 ![Screenshot](doc/screenshot.png)
 
 ## How it works
 
-lagsim sets up an HTB qdisc tree on your LAN interface with per-client classes and netem leaf qdiscs. Ingress traffic is redirected through an IFB device so both upload and download are conditioned symmetrically.
+lagsim sets up an HTB qdisc tree on your LAN interface with per-client classes and netem leaf qdiscs. Ingress traffic is redirected through an IFB device so both upload and download are conditioned independently.
 
 ```
-LAN clients <──eth0.30──> router <──wan0──> internet
+LAN clients <──eth0──> router <──wan0──> internet
                  │
          HTB + netem (egress/download)
          IFB + netem (ingress/upload)
 ```
+
+Each direction gets its own netem parameters, so profiles can model asymmetric links (e.g., DSL with fast download / slow upload, or cellular with higher uplink loss).
 
 ## Install
 
@@ -32,7 +34,15 @@ sudo cp lagsim /usr/local/bin/
 sudo lagsim
 ```
 
-Navigate clients with arrow keys, press Enter to select a profile, `e` to edit a device name, `r` to remove a profile.
+| Key | Action |
+|-----|--------|
+| `↑`/`k`, `↓`/`j` | Navigate client list |
+| `Enter` | Open profile selection menu |
+| `e` | Edit device name (requires MAC) |
+| `r`, `Delete` | Remove profile from client |
+| `Esc` | Cancel / back to list |
+| `Ctrl+U` | Clear name in edit mode |
+| `q`, `Ctrl+C` | Quit |
 
 ### CLI
 
@@ -49,7 +59,7 @@ sudo lagsim apply 192.168.1.100 3G
 # Remove conditioning from a client
 sudo lagsim remove 192.168.1.100
 
-# Initialize tc infrastructure (auto-runs on first apply)
+# Initialize tc infrastructure and restore saved assignments
 sudo lagsim init
 
 # Tear down all tc rules
@@ -63,41 +73,63 @@ sudo lagsim status
 
 | Flag | Description |
 |------|-------------|
-| `-c`, `--config` | Config file path (default `lagsim.yaml`) |
+| `-c`, `--config` | Config file path (default `~/.config/lagsim.yaml`) |
 | `--dry-run` | Print tc commands without executing |
 | `-v`, `--verbose` | Verbose output |
 
+On first run, lagsim auto-detects the LAN interface and subnet. If multiple interfaces are found, it prompts you to choose.
+
 ## Built-in profiles
 
-| Profile | Delay | Jitter | Loss | Rate |
-|---------|-------|--------|------|------|
-| 3G | 200ms | 50ms | 1.5% | 2 Mbit |
-| LTE | 50ms | 10ms | 0.5% | 50 Mbit |
-| Lossy-WiFi | 15ms | 5ms | 3% | 20 Mbit |
-| Starlink | 40ms | 7ms | 1% | 100 Mbit |
-| Satellite | 600ms | 50ms | 1.5% | 5 Mbit |
-| DSL | 25ms | 5ms | 0.2% | 25 Mbit |
-| Cable | 10ms | 2ms | 0.05% | 200 Mbit |
+Each parameter is applied per-direction (egress + ingress), so effective RTT is roughly 2x the delay value. Asymmetric values are shown as `▼ download ▲ upload`.
+
+| Profile | Delay | Jitter | Loss | Reorder | Rate |
+|---------|-------|--------|------|---------|------|
+| 3G | 100ms | ▼ 30ms ▲ 50ms | ▼ 1.5% ▲ 2.5% | – | ▼ 2 Mbit ▲ 0.5 Mbit |
+| LTE | 20ms | ▼ 5ms ▲ 8ms | ▼ 0.5% ▲ 1% | – | ▼ 50 Mbit ▲ 15 Mbit |
+| 5G | 5ms | 1ms | ▼ 0.05% ▲ 0.1% | – | ▼ 300 Mbit ▲ 100 Mbit |
+| Edge-2G | 150ms | ▼ 60ms ▲ 100ms | ▼ 5% ▲ 8% | – | ▼ 0.1 Mbit ▲ 0.05 Mbit |
+| Lossy-WiFi | 5ms | 3ms | 3% | 1% | 20 Mbit |
+| Starlink | 20ms | ▼ 5ms ▲ 10ms | ▼ 0.5% ▲ 1% | 0.5% | ▼ 100 Mbit ▲ 20 Mbit |
+| Satellite | 300ms | ▼ 30ms ▲ 50ms | ▼ 1.5% ▲ 2.5% | – | ▼ 5 Mbit ▲ 1 Mbit |
+| DSL | 15ms | 3ms | 0.2% | – | ▼ 25 Mbit ▲ 3 Mbit |
+| Cable | 5ms | 1ms | 0.05% | – | ▼ 200 Mbit ▲ 20 Mbit |
+| Airplane-WiFi | 150ms | ▼ 30ms ▲ 50ms | ▼ 3% ▲ 5% | 1% | ▼ 2 Mbit ▲ 1 Mbit |
+| Congested | 50ms | 40ms | 5% | 2% | ▼ 1 Mbit ▲ 0.5 Mbit |
+
+Built-in profiles are defined in code, not written to the config file.
 
 ## Configuration
 
-Profiles, assignments, and device names are stored in `lagsim.yaml`:
+Configuration is stored in `~/.config/lagsim.yaml`:
 
 ```yaml
 interfaces:
-  lan: eth0       # LAN-facing interface
+  lan: eth0       # LAN-facing interface (auto-detected on first run)
   ifb: ifb0       # IFB device (created automatically)
   subnet: 192.168.1.0/24
 root_rate: 1gbit
 
 profiles:
+  # Override a built-in profile
   3G:
-    delay: 200ms
-    jitter: 50ms
+    delay: 100ms
+    jitter: 30ms
     correlation: 25%
     loss: 1.5%
     rate: 2mbit
-  # add your own...
+    upload:
+      rate: 0.5mbit
+
+  # Add a custom profile
+  My-VPN:
+    delay: 30ms
+    jitter: 5ms
+    loss: 0.1%
+    rate: 50mbit
+
+  # Disable a built-in profile
+  Edge-2G: null
 
 assignments:
   192.168.1.100: 3G
@@ -108,9 +140,60 @@ names:
   aa:bb:cc:dd:ee:f1: Dad's Phone
 ```
 
-Custom names are keyed by MAC address so they follow the device across IP changes.
+### Custom profiles
 
-Assignments persist across reboots -- run `lagsim init` at startup to restore them (e.g. via systemd or cron `@reboot`).
+Only profiles that differ from the built-in defaults are saved to the config file. You can:
+
+- **Add** custom profiles alongside the built-ins
+- **Override** a built-in by redefining it (full replacement, not merged)
+- **Disable** a built-in by setting it to `null`
+
+### Profile parameters
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `delay` | Base latency added to each packet | `100ms` |
+| `jitter` | Random variation added to delay | `30ms` |
+| `correlation` | How much each packet's delay correlates with the previous | `25%` |
+| `loss` | Packet loss probability | `1.5%` |
+| `duplicate` | Packet duplication probability | `0.5%` |
+| `reorder` | Packet reordering probability | `1%` |
+| `corrupt` | Packet corruption probability | `0.1%` |
+| `rate` | Bandwidth limit | `2mbit` |
+
+All parameters are optional except `delay`. Values use `tc`/`netem` syntax.
+
+### Asymmetric profiles
+
+Base parameters apply to both directions. Add `download` and/or `upload` sections to override specific parameters per direction — only the fields you specify are overridden, the rest inherit from the base:
+
+```yaml
+profiles:
+  My-Satellite:
+    delay: 300ms
+    jitter: 30ms
+    loss: 1.5%
+    rate: 5mbit
+    upload:
+      rate: 1mbit       # slower upload
+      jitter: 50ms      # more jitter on uplink
+      loss: 2.5%        # more loss on uplink
+    download:
+      rate: 10mbit      # faster download
+```
+
+### Device names
+
+Custom names are keyed by MAC address so they follow the device across IP changes. Edit names in the TUI with `e`, or set them directly in the config under `names`.
+
+### Persistence
+
+Assignments persist across reboots. Run `lagsim init` at startup to restore them (e.g. via systemd or cron `@reboot`):
+
+```bash
+# crontab -e
+@reboot /usr/local/bin/lagsim init
+```
 
 ## Requirements
 

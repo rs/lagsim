@@ -18,19 +18,35 @@ var profilesCmd = &cobra.Command{
 
 		for _, name := range cfg.ProfileNames() {
 			p := cfg.Profiles[name]
+			dl := p.Resolved("download")
+			ul := p.Resolved("upload")
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 				name,
-				dash(p.Delay),
-				dash(p.Jitter),
-				dash(p.Loss),
-				dash(p.Duplicate),
-				dash(p.Reorder),
-				dash(p.Rate),
+				asym(dl.Delay, ul.Delay),
+				asym(dl.Jitter, ul.Jitter),
+				asym(dl.Loss, ul.Loss),
+				asym(dl.Duplicate, ul.Duplicate),
+				asym(dl.Reorder, ul.Reorder),
+				asym(dl.Rate, ul.Rate),
 			)
 		}
 		w.Flush()
 		return nil
 	},
+}
+
+// asym formats a cell as "value" if symmetric, or "▼ dl ▲ ul" if different.
+func asym(dl, ul string) string {
+	if dl == "" && ul == "" {
+		return "-"
+	}
+	if dl == ul {
+		if dl == "" {
+			return "-"
+		}
+		return dl
+	}
+	return fmt.Sprintf("▼ %s ▲ %s", dash(dl), dash(ul))
 }
 
 func dash(s string) string {

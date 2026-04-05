@@ -8,15 +8,17 @@ import (
 
 // ApplyProfile applies a netem profile to a client IP on a single device.
 // filterField is "dst" for the LAN interface (egress to client) or "src" for ifb (ingress from client).
-func ApplyProfile(r *Runner, dev, ip string, profile config.Profile, rootRate string, filterField string) error {
+// direction is "download" or "upload" and selects the resolved directional profile.
+func ApplyProfile(r *Runner, dev, ip string, profile *config.Profile, rootRate string, filterField string, direction string) error {
 	classID, err := ClassIDFromIP(ip)
 	if err != nil {
 		return err
 	}
 
+	resolved := profile.Resolved(direction)
 	classStr := FormatClassID(classID)
 	handleStr := NetemHandle(classID)
-	rate := profile.Rate
+	rate := resolved.Rate
 	if rate == "" {
 		rate = rootRate
 	}
@@ -35,7 +37,7 @@ func ApplyProfile(r *Runner, dev, ip string, profile config.Profile, rootRate st
 	}
 
 	// Build netem args
-	netemArgs := buildNetemArgs(profile)
+	netemArgs := buildNetemArgs(resolved)
 
 	// Add or change netem qdisc
 	if r.QdiscExists(dev, handleStr) {
@@ -135,7 +137,7 @@ func extractFilterHandle(line string) string {
 	return rest[:end]
 }
 
-func buildNetemArgs(p config.Profile) []string {
+func buildNetemArgs(p config.DirectionalProfile) []string {
 	var args []string
 
 	if p.Delay != "" {
@@ -167,15 +169,15 @@ func buildNetemArgs(p config.Profile) []string {
 	return args
 }
 
-// ApplyToAllDevices applies a profile to both LAN (egress) and IFB (ingress) interfaces.
-func ApplyToAllDevices(r *Runner, cfg *config.Config, ip string, profile config.Profile) error {
-	fmt.Printf("Applying profile to %s (egress)...\n", cfg.Interfaces.LAN)
-	if err := ApplyProfile(r, cfg.Interfaces.LAN, ip, profile, cfg.RootRate, "dst"); err != nil {
+// ApplyToAllDevices applies a profile to both LAN (egress/download) and IFB (ingress/upload) interfaces.
+func ApplyToAllDevices(r *Runner, cfg *config.Config, ip string, profile *config.Profile) error {
+	fmt.Printf("Applying profile to %s (download)...\n", cfg.Interfaces.LAN)
+	if err := ApplyProfile(r, cfg.Interfaces.LAN, ip, profile, cfg.RootRate, "dst", "download"); err != nil {
 		return err
 	}
 
-	fmt.Printf("Applying profile to %s (ingress)...\n", cfg.Interfaces.IFB)
-	if err := ApplyProfile(r, cfg.Interfaces.IFB, ip, profile, cfg.RootRate, "src"); err != nil {
+	fmt.Printf("Applying profile to %s (upload)...\n", cfg.Interfaces.IFB)
+	if err := ApplyProfile(r, cfg.Interfaces.IFB, ip, profile, cfg.RootRate, "src", "upload"); err != nil {
 		return err
 	}
 
