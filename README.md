@@ -1,5 +1,7 @@
 # lagsim
 
+![lagsim](doc/header.png)
+
 Network condition simulator for Linux routers. Injects latency, jitter, packet loss, reordering, and duplication per client IP using `tc`/`netem`/`ifb`.
 
 Comes with built-in profiles for common network conditions (3G, LTE, Satellite, Starlink, etc.) and an interactive TUI to manage them. Profiles support asymmetric upload/download parameters to model real-world links.
